@@ -43,8 +43,8 @@ package xid
 
 import (
 	"bytes"
-	"crypto/sha256"
 	"crypto/rand"
+	"crypto/sha256"
 	"database/sql/driver"
 	"encoding/binary"
 	"fmt"
@@ -62,8 +62,8 @@ import (
 type ID [rawLen]byte
 
 const (
-	encodedLen = 20 // string encoded len
-	rawLen     = 12 // binary raw len
+	encodedLen = 26 // string encoded len
+	rawLen     = 16 // binary raw len
 
 	// encoding stores a custom version of the base32 encoding with lower case
 	// letters.
@@ -143,20 +143,20 @@ func New() ID {
 // NewWithTime generates a globally unique ID with the passed in time
 func NewWithTime(t time.Time) ID {
 	var id ID
-	// Timestamp, 4 bytes, big endian
-	binary.BigEndian.PutUint32(id[:], uint32(t.Unix()))
+	// Timestamp, 8 bytes, big endian
+	binary.BigEndian.PutUint64(id[:], uint64(t.UnixNano()))
 	// Machine ID, 3 bytes
-	id[4] = machineID[0]
-	id[5] = machineID[1]
-	id[6] = machineID[2]
+	id[8] = machineID[0]
+	id[9] = machineID[1]
+	id[10] = machineID[2]
 	// Pid, 2 bytes, specs don't specify endianness, but we use big endian.
-	id[7] = byte(pid >> 8)
-	id[8] = byte(pid)
+	id[11] = byte(pid >> 8)
+	id[12] = byte(pid)
 	// Increment, 3 bytes, big endian
 	i := atomic.AddUint32(&objectIDCounter, 1)
-	id[9] = byte(i >> 16)
-	id[10] = byte(i >> 8)
-	id[11] = byte(i)
+	id[13] = byte(i >> 16)
+	id[14] = byte(i >> 8)
+	id[15] = byte(i)
 	return id
 }
 
@@ -174,7 +174,7 @@ func (id ID) String() string {
 	return string(text)
 }
 
-// Encode encodes the id using base32 encoding, writing 20 bytes to dst and return it.
+// Encode encodes the id using base32 encoding, writing 26 bytes to dst and return it.
 func (id ID) Encode(dst []byte) []byte {
 	encode(dst, id[:])
 	return dst
@@ -200,25 +200,31 @@ func (id ID) MarshalJSON() ([]byte, error) {
 
 // encode by unrolling the stdlib base32 algorithm + removing all safe checks
 func encode(dst, id []byte) {
-	_ = dst[19]
-	_ = id[11]
+	_ = dst[25]
+	_ = id[15]
 
-	dst[19] = encoding[(id[11]<<4)&0x1F]
+	dst[25] = encoding[(id[15]<<2)&0x1F]
+	dst[24] = encoding[id[15]>>3]
+	dst[23] = encoding[id[14]&0x1F]
+	dst[22] = encoding[((id[14]>>5)|(id[13]<<3))&0x1F]
+	dst[21] = encoding[(id[13]>>2)&0x1F]
+	dst[20] = encoding[((id[13]>>7)|(id[12]<<1))&0x1F]
+	dst[19] = encoding[((id[12]>>4)|(id[11]<<4))&0x1F]
 	dst[18] = encoding[(id[11]>>1)&0x1F]
-	dst[17] = encoding[(id[11]>>6)|(id[10]<<2)&0x1F]
+	dst[17] = encoding[((id[11]>>6)|(id[10]<<2))&0x1F]
 	dst[16] = encoding[id[10]>>3]
 	dst[15] = encoding[id[9]&0x1F]
-	dst[14] = encoding[(id[9]>>5)|(id[8]<<3)&0x1F]
+	dst[14] = encoding[((id[9]>>5)|(id[8]<<3))&0x1F]
 	dst[13] = encoding[(id[8]>>2)&0x1F]
-	dst[12] = encoding[id[8]>>7|(id[7]<<1)&0x1F]
-	dst[11] = encoding[(id[7]>>4)|(id[6]<<4)&0x1F]
+	dst[12] = encoding[((id[8]>>7)|(id[7]<<1))&0x1F]
+	dst[11] = encoding[((id[7]>>4)|(id[6]<<4))&0x1F]
 	dst[10] = encoding[(id[6]>>1)&0x1F]
-	dst[9] = encoding[(id[6]>>6)|(id[5]<<2)&0x1F]
-	dst[8] = encoding[id[5]>>3]
+	dst[9] = encoding[((id[6]>>6)|(id[5]<<2))&0x1F]
+	dst[8] = encoding[(id[5] >> 3)]
 	dst[7] = encoding[id[4]&0x1F]
-	dst[6] = encoding[id[4]>>5|(id[3]<<3)&0x1F]
+	dst[6] = encoding[((id[4]>>5)|(id[3]<<3))&0x1F]
 	dst[5] = encoding[(id[3]>>2)&0x1F]
-	dst[4] = encoding[id[3]>>7|(id[2]<<1)&0x1F]
+	dst[4] = encoding[((id[3]>>7)|(id[2]<<1))&0x1F]
 	dst[3] = encoding[(id[2]>>4)|(id[1]<<4)&0x1F]
 	dst[2] = encoding[(id[1]>>1)&0x1F]
 	dst[1] = encoding[(id[1]>>6)|(id[0]<<2)&0x1F]
@@ -258,14 +264,18 @@ func (id *ID) UnmarshalJSON(b []byte) error {
 
 // decode by unrolling the stdlib base32 algorithm + customized safe check.
 func decode(id *ID, src []byte) bool {
-	_ = src[19]
-	_ = id[11]
+	_ = src[25]
+	_ = id[15]
 
-	id[11] = dec[src[17]]<<6 | dec[src[18]]<<1 | dec[src[19]]>>4
-	// check the last byte
-	if encoding[(id[11]<<4)&0x1F] != src[19] {
+	id[15] = dec[src[24]]<<3 | dec[src[25]]>>2
+	// Check the last byte is valid
+	if encoding[id[15]<<2&0x1F] != src[25] {
 		return false
 	}
+	id[14] = dec[src[22]]<<5 | dec[src[23]]
+	id[13] = dec[src[20]]<<7 | dec[src[21]]<<2 | dec[src[22]]>>3
+	id[12] = dec[src[19]]<<4 | dec[src[20]]>>1
+	id[11] = dec[src[17]]<<6 | dec[src[18]]<<1 | dec[src[19]]>>4
 	id[10] = dec[src[16]]<<3 | dec[src[17]]>>2
 	id[9] = dec[src[14]]<<5 | dec[src[15]]
 	id[8] = dec[src[12]]<<7 | dec[src[13]]<<2 | dec[src[14]]>>3
@@ -283,27 +293,27 @@ func decode(id *ID, src []byte) bool {
 // Time returns the timestamp part of the id.
 // It's a runtime error to call this method with an invalid id.
 func (id ID) Time() time.Time {
-	// First 4 bytes of ObjectId is 32-bit big-endian seconds from epoch.
-	secs := int64(binary.BigEndian.Uint32(id[0:4]))
-	return time.Unix(secs, 0)
+	// First 8 bytes of ObjectId is 64-bit big-endian nanoseconds from epoch.
+	nanoSecs := int64(binary.BigEndian.Uint64(id[0:8]))
+	return time.Unix(0, nanoSecs)
 }
 
 // Machine returns the 3-byte machine id part of the id.
 // It's a runtime error to call this method with an invalid id.
 func (id ID) Machine() []byte {
-	return id[4:7]
+	return id[8:11]
 }
 
 // Pid returns the process id part of the id.
 // It's a runtime error to call this method with an invalid id.
 func (id ID) Pid() uint16 {
-	return binary.BigEndian.Uint16(id[7:9])
+	return binary.BigEndian.Uint16(id[11:13])
 }
 
 // Counter returns the incrementing value part of the id.
 // It's a runtime error to call this method with an invalid id.
 func (id ID) Counter() int32 {
-	b := id[9:12]
+	b := id[13:16]
 	// Counter is stored as big-endian 3-byte value
 	return int32(uint32(b[0])<<16 | uint32(b[1])<<8 | uint32(b[2]))
 }
