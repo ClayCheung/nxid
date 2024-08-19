@@ -4,7 +4,7 @@ import (
 	"database/sql/driver"
 	"fmt"
 
-	"github.com/rs/xid"
+	"github.com/ClayCheung/xid"
 )
 
 type ID struct {
