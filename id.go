@@ -1,4 +1,4 @@
-// Package xid is a globally unique id generator suited for web scale
+// package nxid is a globally unique id generator suited for web scale
 //
 // Xid is using Mongo Object ID algorithm to generate globally unique ids:
 // https://docs.mongodb.org/manual/reference/object-id/
@@ -39,7 +39,7 @@
 //   - http://www.slideshare.net/davegardnerisme/unique-id-generation-in-distributed-systems
 //   - https://en.wikipedia.org/wiki/Universally_unique_identifier
 //   - https://blog.twitter.com/2010/announcing-snowflake
-package xid
+package nxid
 
 import (
 	"bytes"

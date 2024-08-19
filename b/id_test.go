@@ -1,14 +1,14 @@
-package xidb
+package nxidb
 
 import (
 	"reflect"
 	"testing"
 
-	"github.com/ClayCheung/xid"
+	"github.com/ClayCheung/nxid"
 )
 
 func TestIDValue(t *testing.T) {
-	i, _ := xid.FromString("9m4e2mr0ui3e8a215n4g")
+	i, _ := nxid.FromString("2vmidmb6k2umgkb22i2q75j8i4")
 
 	tests := []struct {
 		name        string
@@ -22,7 +22,7 @@ func TestIDValue(t *testing.T) {
 		},
 		{
 			name:        "nil id",
-			id:          ID{ID: xid.NilID()},
+			id:          ID{ID: nxid.NilID()},
 			expectedVal: nil,
 		},
 	}
@@ -38,7 +38,7 @@ func TestIDValue(t *testing.T) {
 }
 
 func TestIDScan(t *testing.T) {
-	i, _ := xid.FromString("9m4e2mr0ui3e8a215n4g")
+	i, _ := nxid.FromString("2vmidmb6k2umgkb22i2q75j8i4")
 
 	tests := []struct {
 		name        string
@@ -54,7 +54,7 @@ func TestIDScan(t *testing.T) {
 		{
 			name:       "nil id",
 			val:        nil,
-			expectedID: ID{ID: xid.NilID()},
+			expectedID: ID{ID: nxid.NilID()},
 		},
 		{
 			name:        "wrong bytes",

@@ -1,4 +1,4 @@
-package xid
+package nxid
 
 const (
 	// ErrInvalidID is returned when trying to unmarshal an invalid ID.

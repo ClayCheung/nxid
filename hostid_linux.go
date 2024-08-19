@@ -1,6 +1,6 @@
 // +build linux
 
-package xid
+package nxid
 
 import "io/ioutil"
 

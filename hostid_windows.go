@@ -1,6 +1,6 @@
 // +build windows
 
-package xid
+package nxid
 
 import (
 	"fmt"
