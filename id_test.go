@@ -9,6 +9,7 @@ import (
 	"reflect"
 	"testing"
 	"testing/quick"
+	"time"
 )
 
 type IDParts struct {
@@ -21,8 +22,8 @@ type IDParts struct {
 
 var IDs = []IDParts{
 	{
-		ID{0x4d, 0x88, 0xe1, 0x5b, 0x00, 0x00, 0x00, 0x00, 0x60, 0xf4, 0x86, 0xe4, 0x28, 0x41, 0x2d, 0xc9},
-		1300816219000000000,
+		ID{0x17, 0xed, 0x5e, 0xbd, 0x68, 0xa7, 0x3f, 0x8, 0x60, 0xf4, 0x86, 0xe4, 0x28, 0x41, 0x2d, 0xc9},
+		1724138399950389000,
 		[]byte{0x60, 0xf4, 0x86},
 		0xe428,
 		4271561,
@@ -46,9 +47,9 @@ var IDs = []IDParts{
 func TestIDPartsExtraction(t *testing.T) {
 	for i, v := range IDs {
 		t.Run(fmt.Sprintf("Test%d", i), func(t *testing.T) {
-			//if got, want := v.id.Time(), time.Unix(0, v.timestamp); got != want {
-			//	t.Errorf("Time() = %v, want %v", got, want)
-			//}
+			if got, want := v.id.Time(), time.Unix(0, v.timestamp); got != want {
+				t.Errorf("Time() = %v, want %v", got, want)
+			}
 			if got, want := v.id.Machine(), v.machine; !bytes.Equal(got, want) {
 				t.Errorf("Machine() = %v, want %v", got, want)
 			}
@@ -64,11 +65,11 @@ func TestIDPartsExtraction(t *testing.T) {
 
 func TestPadding(t *testing.T) {
 	for i := 0; i < 100000; i++ {
-		wantBytes := make([]byte, 20)
-		wantBytes[19] = encoding[0]                       // 0
-		copy(wantBytes[0:13], []byte("c6e52g2mrqcjl")[:]) // c6e52g2mrqcjl44hf170
+		wantBytes := make([]byte, 26)
+		wantBytes[25] = encoding[0]                             // 0
+		copy(wantBytes[0:19], []byte("2vmltfb8ksvggkb22gu")[:]) // 2vmltfb8ksvggkb22guhamlsr8
 		for j := 0; j < 6; j++ {
-			wantBytes[13+j] = encoding[rand.Intn(32)]
+			wantBytes[19+j] = encoding[rand.Intn(32)]
 		}
 		want := string(wantBytes)
 		id, _ := FromString(want)
@@ -117,26 +118,26 @@ func TestNew(t *testing.T) {
 }
 
 func TestIDString(t *testing.T) {
-	id := ID{0x4d, 0x88, 0xe1, 0x5b, 0x60, 0xf4, 0x86, 0xe4, 0x28, 0x41, 0x2d, 0xc9}
-	if got, want := id.String(), "9m4e2mr0ui3e8a215n4g"; got != want {
+	id := ID{0x17, 0xed, 0x5e, 0xbd, 0x68, 0xa7, 0x3f, 0x8, 0x60, 0xf4, 0x86, 0xe4, 0x28, 0x41, 0x2d, 0xc9}
+	if got, want := id.String(), "2vmltfb8ksvggo7kgri2gg9dp4"; got != want {
 		t.Errorf("String() = %v, want %v", got, want)
 	}
 }
 
 func TestIDEncode(t *testing.T) {
-	id := ID{0x4d, 0x88, 0xe1, 0x5b, 0x60, 0xf4, 0x86, 0xe4, 0x28, 0x41, 0x2d, 0xc9}
+	id := ID{0x17, 0xed, 0x5e, 0xbd, 0x68, 0xa7, 0x3f, 0x8, 0x60, 0xf4, 0x86, 0xe4, 0x28, 0x41, 0x2d, 0xc9}
 	text := make([]byte, encodedLen)
-	if got, want := string(id.Encode(text)), "9m4e2mr0ui3e8a215n4g"; got != want {
+	if got, want := string(id.Encode(text)), "2vmltfb8ksvggo7kgri2gg9dp4"; got != want {
 		t.Errorf("Encode() = %v, want %v", got, want)
 	}
 }
 
 func TestFromString(t *testing.T) {
-	got, err := FromString("9m4e2mr0ui3e8a215n4g")
+	got, err := FromString("2vmltfb8ksvggo7kgri2gg9dp4")
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := ID{0x4d, 0x88, 0xe1, 0x5b, 0x60, 0xf4, 0x86, 0xe4, 0x28, 0x41, 0x2d, 0xc9}
+	want := ID{0x17, 0xed, 0x5e, 0xbd, 0x68, 0xa7, 0x3f, 0x8, 0x60, 0xf4, 0x86, 0xe4, 0x28, 0x41, 0x2d, 0xc9}
 	if got != want {
 		t.Errorf("FromString() = %v, want %v", got, want)
 	}
@@ -147,7 +148,7 @@ func TestFromStringInvalid(t *testing.T) {
 	if err != ErrInvalidID {
 		t.Errorf("FromString(invalid) err=%v, want %v", err, ErrInvalidID)
 	}
-	id, err := FromString("c6e52g2mrqcjl44hf179")
+	id, err := FromString("2vmltfb8ksvggo7kgri2gg9d79")
 	if id != nilID {
 		t.Errorf("FromString() =%v, want %v", id, nilID)
 	}
@@ -159,25 +160,25 @@ type jsonType struct {
 }
 
 func TestIDJSONMarshaling(t *testing.T) {
-	id := ID{0x4d, 0x88, 0xe1, 0x5b, 0x60, 0xf4, 0x86, 0xe4, 0x28, 0x41, 0x2d, 0xc9}
+	id := ID{0x17, 0xed, 0x5e, 0xbd, 0x68, 0xa7, 0x3f, 0x8, 0x60, 0xf4, 0x86, 0xe4, 0x28, 0x41, 0x2d, 0xc9}
 	v := jsonType{ID: &id, Str: "test"}
 	data, err := json.Marshal(&v)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got, want := string(data), `{"ID":"9m4e2mr0ui3e8a215n4g","Str":"test"}`; got != want {
+	if got, want := string(data), `{"ID":"2vmltfb8ksvggo7kgri2gg9dp4","Str":"test"}`; got != want {
 		t.Errorf("json.Marshal() = %v, want %v", got, want)
 	}
 }
 
 func TestIDJSONUnmarshaling(t *testing.T) {
-	data := []byte(`{"ID":"9m4e2mr0ui3e8a215n4g","Str":"test"}`)
+	data := []byte(`{"ID":"2vmltfb8ksvggo7kgri2gg9dp4","Str":"test"}`)
 	v := jsonType{}
 	err := json.Unmarshal(data, &v)
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := ID{0x4d, 0x88, 0xe1, 0x5b, 0x60, 0xf4, 0x86, 0xe4, 0x28, 0x41, 0x2d, 0xc9}
+	want := ID{0x17, 0xed, 0x5e, 0xbd, 0x68, 0xa7, 0x3f, 0x8, 0x60, 0xf4, 0x86, 0xe4, 0x28, 0x41, 0x2d, 0xc9}
 	if got := *v.ID; got.Compare(want) != 0 {
 		t.Errorf("json.Unmarshal() = %v, want %v", got, want)
 	}
@@ -186,15 +187,15 @@ func TestIDJSONUnmarshaling(t *testing.T) {
 
 func TestIDJSONUnmarshalingError(t *testing.T) {
 	v := jsonType{}
-	err := json.Unmarshal([]byte(`{"ID":"9M4E2MR0UI3E8A215N4G"}`), &v)
+	err := json.Unmarshal([]byte(`{"ID":"2VMLTFB8KSVGGO7KGRI2GG9DP4"}`), &v)
 	if err != ErrInvalidID {
 		t.Errorf("json.Unmarshal() err=%v, want %v", err, ErrInvalidID)
 	}
-	err = json.Unmarshal([]byte(`{"ID":"TYjhW2D0huQoQS"}`), &v)
+	err = json.Unmarshal([]byte(`{"ID":"TYjhW2D0huQoQSdf2d4S"}`), &v)
 	if err != ErrInvalidID {
 		t.Errorf("json.Unmarshal() err=%v, want %v", err, ErrInvalidID)
 	}
-	err = json.Unmarshal([]byte(`{"ID":"TYjhW2D0huQoQS3kdk"}`), &v)
+	err = json.Unmarshal([]byte(`{"ID":"2vmltfb8ksvggo7kgri2GG9DP4"}`), &v)
 	if err != ErrInvalidID {
 		t.Errorf("json.Unmarshal() err=%v, want %v", err, ErrInvalidID)
 	}
@@ -205,23 +206,23 @@ func TestIDJSONUnmarshalingError(t *testing.T) {
 }
 
 func TestIDDriverValue(t *testing.T) {
-	id := ID{0x4d, 0x88, 0xe1, 0x5b, 0x60, 0xf4, 0x86, 0xe4, 0x28, 0x41, 0x2d, 0xc9}
+	id := ID{0x17, 0xed, 0x5e, 0xbd, 0x68, 0xa7, 0x3f, 0x8, 0x60, 0xf4, 0x86, 0xe4, 0x28, 0x41, 0x2d, 0xc9}
 	got, err := id.Value()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if want := "9m4e2mr0ui3e8a215n4g"; got != want {
+	if want := "2vmltfb8ksvggo7kgri2gg9dp4"; got != want {
 		t.Errorf("Value() = %v, want %v", got, want)
 	}
 }
 
 func TestIDDriverScan(t *testing.T) {
 	got := ID{}
-	err := got.Scan("9m4e2mr0ui3e8a215n4g")
+	err := got.Scan("2vmltfb8ksvggo7kgri2gg9dp4")
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := ID{0x4d, 0x88, 0xe1, 0x5b, 0x60, 0xf4, 0x86, 0xe4, 0x28, 0x41, 0x2d, 0xc9}
+	want := ID{0x17, 0xed, 0x5e, 0xbd, 0x68, 0xa7, 0x3f, 0x8, 0x60, 0xf4, 0x86, 0xe4, 0x28, 0x41, 0x2d, 0xc9}
 	if got.Compare(want) != 0 {
 		t.Errorf("Scan() = %v, want %v", got, want)
 	}
@@ -239,39 +240,15 @@ func TestIDDriverScanError(t *testing.T) {
 
 func TestIDDriverScanByteFromDatabase(t *testing.T) {
 	got := ID{}
-	bs := []byte("9m4e2mr0ui3e8a215n4g")
+	bs := []byte("2vmltfb8ksvggo7kgri2gg9dp4")
 	err := got.Scan(bs)
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := ID{0x4d, 0x88, 0xe1, 0x5b, 0x60, 0xf4, 0x86, 0xe4, 0x28, 0x41, 0x2d, 0xc9}
+	want := ID{0x17, 0xed, 0x5e, 0xbd, 0x68, 0xa7, 0x3f, 0x8, 0x60, 0xf4, 0x86, 0xe4, 0x28, 0x41, 0x2d, 0xc9}
 	if got.Compare(want) != 0 {
 		t.Errorf("Scan() = %v, want %v", got, want)
 	}
-}
-
-func BenchmarkNew(b *testing.B) {
-	b.RunParallel(func(pb *testing.PB) {
-		for pb.Next() {
-			_ = New()
-		}
-	})
-}
-
-func BenchmarkNewString(b *testing.B) {
-	b.RunParallel(func(pb *testing.PB) {
-		for pb.Next() {
-			_ = New().String()
-		}
-	})
-}
-
-func BenchmarkFromString(b *testing.B) {
-	b.RunParallel(func(pb *testing.PB) {
-		for pb.Next() {
-			_, _ = FromString("9m4e2mr0ui3e8a215n4g")
-		}
-	})
 }
 
 func TestFromStringQuick(t *testing.T) {
@@ -327,22 +304,6 @@ func TestFromStringQuickInvalidChars(t *testing.T) {
 		t.Error(err)
 	}
 }
-
-// func BenchmarkUUIDv1(b *testing.B) {
-// 	b.RunParallel(func(pb *testing.PB) {
-// 		for pb.Next() {
-// 			_ = uuid.NewV1().String()
-// 		}
-// 	})
-// }
-
-// func BenchmarkUUIDv4(b *testing.B) {
-// 	b.RunParallel(func(pb *testing.PB) {
-// 		for pb.Next() {
-// 			_ = uuid.NewV4().String()
-// 		}
-// 	})
-// }
 
 func TestID_IsNil(t *testing.T) {
 	tests := []struct {
@@ -401,8 +362,11 @@ func TestFromBytes_InvalidBytes(t *testing.T) {
 		shouldFail bool
 	}{
 		{11, true},
-		{12, false},
+		{12, true},
 		{13, true},
+		{16, false},
+		{18, true},
+		{20, true},
 	}
 	for _, c := range cases {
 		b := make([]byte, c.length)
@@ -420,7 +384,7 @@ func TestID_Compare(t *testing.T) {
 		expected int
 	}{
 		{IDs[1].id, IDs[0].id, -1},
-		{ID{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}, IDs[2].id, -1},
+		{ID{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}, IDs[2].id, -1},
 		{IDs[0].id, IDs[0].id, 0},
 	}
 	for _, p := range pairs {

@@ -69,6 +69,30 @@ guid.Time()
 guid.Counter()
 ```
 
+## Benchmark
+run benchmark in id_benchmark_test.go
+```bash
+# go test -bench=. -benchmem -cpu=1,2,4
+BenchmarkNXID           22169484                52.01 ns/op            0 B/op          0 allocs/op
+BenchmarkNXID-2         26748993                43.79 ns/op            0 B/op          0 allocs/op
+BenchmarkNXID-4         31624129                42.95 ns/op            0 B/op          0 allocs/op
+BenchmarkXID            24247342                49.69 ns/op            0 B/op          0 allocs/op
+BenchmarkXID-2          27107719                42.16 ns/op            0 B/op          0 allocs/op
+BenchmarkXID-4          35370450                46.31 ns/op            0 B/op          0 allocs/op
+BenchmarkGoUUIDv1       12962964                92.62 ns/op           48 B/op          1 allocs/op
+BenchmarkGoUUIDv1-2     10513396               113.9 ns/op            48 B/op          1 allocs/op
+BenchmarkGoUUIDv1-4      7847894               152.9 ns/op            48 B/op          1 allocs/op
+BenchmarkUUIDv4         11317635               106.7 ns/op            64 B/op          2 allocs/op
+BenchmarkUUIDv4-2        9622802               124.1 ns/op            64 B/op          2 allocs/op
+BenchmarkUUIDv4-4        8338959               143.7 ns/op            64 B/op          2 allocs/op
+BenchmarkUUIDv6         12215884                96.62 ns/op           48 B/op          1 allocs/op
+BenchmarkUUIDv6-2        9493748               125.4 ns/op            48 B/op          1 allocs/op
+BenchmarkUUIDv6-4        7318026               167.4 ns/op            48 B/op          1 allocs/op
+BenchmarkUUIDv7          7409154               161.3 ns/op            64 B/op          2 allocs/op
+BenchmarkUUIDv7-2        6529828               183.6 ns/op            64 B/op          2 allocs/op
+BenchmarkUUIDv7-4        6162991               194.6 ns/op            64 B/op          2 allocs/op
+```
+
 ## Licensing
 
 All source code is licensed under the [MIT License](https://raw.github.com/ClayCheung/nxid/master/LICENSE).
